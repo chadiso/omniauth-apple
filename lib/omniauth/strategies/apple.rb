@@ -16,6 +16,7 @@ module OmniAuth
              response_mode: 'form_post',
              scope: 'email name'
       option :authorized_client_ids, []
+      option :authorize_options, [:scope, :state]
 
       uid { id_info['sub'] }
 
@@ -39,7 +40,16 @@ module OmniAuth
       end
 
       def authorize_params
-        super.merge(nonce: new_nonce)
+        options.authorize_params[:state] = request[:state] || SecureRandom.hex(24)
+
+        params = options.authorize_params.merge(options_for("authorize"))
+        if OmniAuth.config.test_mode
+          @env ||= {}
+          @env["rack.session"] ||= {}
+        end
+        session["omniauth.state"] = params[:state]
+
+        params.merge(nonce: new_nonce)
       end
 
       def callback_url
