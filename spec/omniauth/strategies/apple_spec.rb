@@ -5,7 +5,8 @@ require 'json'
 require 'omniauth-apple'
 
 describe OmniAuth::Strategies::Apple do
-  let(:request) { double('Request', params: {}, cookies: {}, env: {}) }
+  let(:request) { double('Request', params: {}, cookies: {}, env: {}, :[] => nil) }
+
   let(:app) do
     lambda do
       [200, {}, ['Hello.']]
@@ -148,6 +149,16 @@ describe OmniAuth::Strategies::Apple do
     describe 'state' do
       it 'should set the omniauth.state' do
         expect(subject.authorize_params['state']).to match /\h+/
+      end
+
+      context 'when the state passed through the request' do
+        let(:state) { SecureRandom.hex(24) }
+
+        before { allow(request).to receive(:[]).with(:state).and_return(state) }
+
+        it 'should take state from the request' do
+          expect(subject.authorize_params['state']).to eq(state)
+        end
       end
     end
 
